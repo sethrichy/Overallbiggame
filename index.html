@@ -53,16 +53,21 @@
   .mission:last-child { border: 0; }
   .mission-check { display: grid; place-items: center; width: 18px; height: 18px; border: 2px solid #82988d; border-radius: 3px; color: white; font-size: 11px; font-weight: 900; }
   .mission.done .mission-check { border-color: var(--green); background: var(--green); }
+  .mission-titleline { display: flex; align-items: center; justify-content: space-between; gap: 5px; flex-wrap: wrap; }
   .mission-name { font-size: 11px; font-weight: 900; }
   .mission-hint { margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+  .mission-helper { display: inline-flex; align-items: center; gap: 4px; min-height: 34px; padding: 5px 8px; border: 1.5px solid #8fa597; border-radius: 4px; background: #eaf2df; font-size: 10px; font-weight: 900; white-space: nowrap; cursor: pointer; }
+  .mission-helper.active { border-color: var(--ink); background: #ffedb2; box-shadow: 2px 2px 0 var(--ink); }
+  .mission-helper:focus-visible, .companion:focus-visible { outline: 3px solid #318761; outline-offset: 2px; }
   .companion-list { display: grid; gap: 6px; padding: 9px; }
-  .companion { display: grid; grid-template-columns: 33px 1fr 22px; align-items: center; gap: 8px; min-height: 49px; padding: 6px 8px; border: 1.5px solid transparent; border-radius: 4px; background: #eaf2df; text-align: left; cursor: pointer; transition: background .12s, border-color .12s, transform .12s; }
+  .companion { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 8px; min-height: 56px; padding: 8px; border: 1.5px solid transparent; border-radius: 4px; background: #eaf2df; text-align: left; cursor: pointer; transition: background .12s, border-color .12s, transform .12s; }
   .companion:hover { transform: translateX(2px); }
   .companion.active { border-color: var(--ink); background: #ffedb2; box-shadow: 2px 2px 0 var(--ink); }
-  .companion-icon { display: grid; place-items: center; width: 31px; height: 31px; border: 1.5px solid var(--ink); border-radius: 4px; background: #d5e9ca; font-size: 18px; }
+  .companion-icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1.5px solid var(--ink); border-radius: 4px; background: #d5e9ca; font-size: 18px; }
   .companion-name { font-size: 11px; font-weight: 900; }
   .companion-ability { margin-top: 3px; color: var(--muted); font-size: 9px; }
-  .companion-key { display: grid; place-items: center; width: 19px; height: 19px; border: 1px solid #9bb0a0; border-radius: 3px; color: var(--muted); font-size: 10px; font-weight: 900; }
+  .companion-key { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 4px; border: 1px solid #9bb0a0; border-radius: 3px; color: var(--muted); font-size: 10px; font-weight: 900; }
+  .companion-key.active { border-color: var(--ink); background: var(--green); color: white; font-size: 8px; }
   .tip { padding: 9px 11px; border-top: 1px solid var(--line); color: #536d61; font-size: 10px; line-height: 1.55; }
   .bottom-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 9px; color: #526e61; font-size: 10px; }
   .reset-button { padding: 5px 8px; border: 1px solid #779187; border-radius: 3px; background: var(--paper); font-size: 10px; cursor: pointer; }
@@ -143,18 +148,20 @@
   const ctx = canvas.getContext('2d');
   const W = canvas.width;
   const H = canvas.height;
-  const ZOOM = Math.min(W / 960, H / 640);
-  const world = { width: 960, height: 640 };
+  const world = { width: 1280, height: 820 };
+  const ZOOM = Math.min(W / world.width, H / world.height);
   const player = { x: 480, y: 348, dir: 'down', moving: false, step: 0 };
   const player2 = { x: 510, y: 348, dir: 'down', moving: false, step: 0 };
   let activePlayer = player;
-  const camera = { x: 0, y: 0 };
+  const camera = { x: (world.width - W / ZOOM) / 2, y: (world.height - H / ZOOM) / 2 };
   const keys = new Set();
   const companions = [
     { id: 'bolt', name: 'Bolt', icon: '&#9881;', color: '#e87955', ability: 'Fix-it whiz', line: 'Repairs broken things in a jiffy.' },
     { id: 'pip', name: 'Pip', icon: '&#10047;', color: '#7ab657', ability: 'Keen little nose', line: 'Sniffs out things hiding nearby.' },
     { id: 'zip', name: 'Zip', icon: '&#9733;', color: '#568dce', ability: 'Super speedy', line: 'Gets across town in a flash.' }
   ];
+  const followerChains = [player, player2].map(leader => companions.map((companion, index) => ({ companion, x: leader.x, y: leader.y - 24 * (index + 1), dir: 'down' })));
+  let followPaths = [player, player2].map(leader => [{ x: leader.x, y: leader.y }]);
   const errands = [
     { id: 'fountain', name: 'Wake up the fountain', hint: 'Maple Square &middot; Bolt', x: 478, y: 225, companion: 'bolt', object: 'Dry fountain', detail: 'The fountain is all clogged up.', done: false },
     { id: 'flowers', name: 'Find the lost flowers', hint: 'Daisy Park &middot; Pip', x: 800, y: 438, companion: 'pip', object: 'Garden patch', detail: 'Someone dropped a bundle of daisies.', done: false },
@@ -169,7 +176,17 @@
     { x: 712, y: 446, w: 186, h: 143, type: 'home', name: 'BAKERY' },
     { x: 280, y: 190, w: 74, h: 42, type: 'tree' },
     { x: 612, y: 330, w: 83, h: 48, type: 'tree' },
-    { x: 720, y: 226, w: 72, h: 41, type: 'tree' }
+    { x: 720, y: 226, w: 72, h: 41, type: 'tree' },
+    { x: 555, y: 38, w: 105, h: 130, type: 'tower-glass', name: 'MIDTOWN TOWER' },
+    { x: 930, y: 43, w: 112, h: 126, type: 'tower-glass', name: 'WAVERLY FLATS' },
+    { x: 1115, y: 39, w: 142, h: 130, type: 'tower-brick', name: 'NORTH TOWER' },
+    { x: 540, y: 440, w: 120, h: 148, type: 'tower-brick', name: 'GRAND LOFTS' },
+    { x: 930, y: 444, w: 120, h: 148, type: 'tower-brick', name: 'EASTSIDE LOFTS' },
+    { x: 1110, y: 440, w: 148, h: 152, type: 'tower-glass', name: 'PARK VIEW' },
+    { x: 44, y: 665, w: 156, h: 142, type: 'home3', name: 'CANAL HOUSE' },
+    { x: 735, y: 665, w: 124, h: 142, type: 'tower-brick', name: 'CITY HOUSE' },
+    { x: 930, y: 664, w: 120, h: 143, type: 'tower-glass', name: 'GRAND ARCADE' },
+    { x: 1110, y: 660, w: 148, h: 147, type: 'tower-brick', name: 'SOUTH TOWER' }
   ];
   const townspeople = [
     { name: 'Park neighbor', detail: 'Beautiful day for a stroll.', x: 801, y: 371, shirt: '#d48663', hair: '#573f38', dir: 'down', phase: 0, speed: 15, route: [[801, 371], [830, 371], [830, 383], [801, 383]], waypoint: 1 },
@@ -188,19 +205,21 @@
   let playerAnimation = 0;
 
   function drawBuilding(b) {
-    if (b.type.startsWith('home')) {
-      const brick = b.type === 'home2' ? '#778f91' : b.type === 'home3' ? '#bd755f' : '#b69b78';
+    if (b.type.startsWith('home') || b.type.startsWith('tower')) {
+      const tower = b.type.startsWith('tower');
+      const brick = tower ? (b.type === 'tower-glass' ? '#577782' : '#8b6257') : b.type === 'home2' ? '#778f91' : b.type === 'home3' ? '#bd755f' : '#b69b78';
       ctx.fillStyle = '#68716c'; ctx.fillRect(b.x + 7, b.y + 7, b.w, b.h);
       ctx.fillStyle = brick; ctx.fillRect(b.x, b.y, b.w, b.h);
       ctx.fillStyle = '#ddd0ad'; ctx.fillRect(b.x + 5, b.y + 5, b.w - 10, 5);
       ctx.fillStyle = '#665d54'; ctx.fillRect(b.x - 2, b.y + b.h - 5, b.w + 4, 7);
       ctx.fillStyle = '#4d5c58'; ctx.fillRect(b.x + 9, b.y + 14, b.w - 18, 3);
-      for (let wx = b.x + 14, column = 0; wx < b.x + b.w - 22; wx += 27, column++) {
-        for (let wy = b.y + 24, floor = 0; wy < b.y + b.h - 24; wy += 21, floor++) {
-          ctx.fillStyle = '#e0cc9f'; ctx.fillRect(wx - 2, wy - 2, 16, 16);
-          ctx.fillStyle = (column + floor + (b.type === 'home2' ? 1 : 0)) % 4 === 0 ? '#f3cf79' : '#41575b';
-          ctx.fillRect(wx, wy, 12, 12);
-          ctx.fillStyle = '#849799'; ctx.fillRect(wx + 5, wy, 2, 12); ctx.fillRect(wx, wy + 5, 12, 2);
+      const windowSize = tower ? 8 : 12, columnSpacing = tower ? 16 : 27, floorSpacing = tower ? 11 : 21;
+      for (let wx = b.x + 14, column = 0; wx < b.x + b.w - 18; wx += columnSpacing, column++) {
+        for (let wy = b.y + 24, floor = 0; wy < b.y + b.h - 17; wy += floorSpacing, floor++) {
+          ctx.fillStyle = tower ? '#c2b89e' : '#e0cc9f'; ctx.fillRect(wx - 2, wy - 2, windowSize + 4, windowSize + 4);
+          ctx.fillStyle = (column + floor + (b.type === 'home2' ? 1 : 0)) % 4 === 0 ? '#f3cf79' : tower && b.type === 'tower-glass' ? '#314b59' : '#41575b';
+          ctx.fillRect(wx, wy, windowSize, windowSize);
+          ctx.fillStyle = '#849799'; ctx.fillRect(wx + windowSize / 2, wy, 1, windowSize); ctx.fillRect(wx, wy + windowSize / 2, windowSize, 1);
         }
       }
       ctx.fillStyle = '#454d49'; ctx.fillRect(b.x + 13, b.y + 8, 20, 5); ctx.fillRect(b.x + b.w - 35, b.y + 8, 22, 5);
@@ -211,6 +230,12 @@
         for (let fy = b.y + 30; fy < b.y + b.h - 25; fy += 22) { ctx.fillRect(b.x + b.w - 43, fy, 16, 3); ctx.fillRect(b.x + b.w - 44, fy - 2, 3, 10); }
       }
       ctx.fillStyle = '#61615a'; ctx.fillRect(b.x + 19, b.y - 5, 24, 6); ctx.fillRect(b.x + b.w - 38, b.y - 9, 23, 10);
+      if (tower) {
+        ctx.fillStyle = '#414d4e'; ctx.fillRect(b.x + 7, b.y + 7, b.w - 14, 8);
+        ctx.fillStyle = '#a08362'; ctx.fillRect(b.x + b.w / 2 - 8, b.y - 1, 16, 11);
+        ctx.fillStyle = '#685744'; ctx.fillRect(b.x + b.w / 2 - 6, b.y + 10, 2, 8); ctx.fillRect(b.x + b.w / 2 + 5, b.y + 10, 2, 8);
+        ctx.fillStyle = '#424b4a'; ctx.fillRect(b.x + b.w / 2 + 26, b.y - 17, 2, 17);
+      }
     } else if (b.type.startsWith('shop')) {
       ctx.fillStyle = '#64766b'; ctx.fillRect(b.x + 5, b.y + 42, b.w, b.h - 39);
       ctx.fillStyle = '#f3d890'; ctx.fillRect(b.x + 8, b.y + 41, b.w - 16, b.h - 42);
@@ -246,24 +271,28 @@
     ctx.fillStyle = '#d3d0c2';
     ctx.fillRect(0, 259, world.width, 90); ctx.fillRect(423, 0, 96, world.height);
     ctx.fillRect(242, 0, 46, world.height); ctx.fillRect(676, 0, 46, world.height);
-    ctx.fillRect(0, 177, world.width, 42); ctx.fillRect(0, 391, world.width, 42);
+    ctx.fillRect(0, 177, world.width, 42); ctx.fillRect(0, 391, world.width, 42); ctx.fillRect(0, 610, world.width, 42);
+    ctx.fillRect(870, 0, 46, world.height); ctx.fillRect(1060, 0, 46, world.height);
     ctx.fillStyle = '#8a9693';
     ctx.fillRect(0, 282, world.width, 43); ctx.fillRect(449, 0, 44, world.height);
     ctx.fillRect(254, 0, 22, world.height); ctx.fillRect(688, 0, 22, world.height);
-    ctx.fillRect(0, 187, world.width, 22); ctx.fillRect(0, 401, world.width, 22);
+    ctx.fillRect(0, 187, world.width, 22); ctx.fillRect(0, 401, world.width, 22); ctx.fillRect(0, 620, world.width, 22);
+    ctx.fillRect(882, 0, 22, world.height); ctx.fillRect(1072, 0, 22, world.height);
     ctx.fillStyle = '#e1d8bd';
     ctx.fillRect(0, 280, world.width, 3); ctx.fillRect(0, 325, world.width, 3);
     ctx.fillRect(446, 0, 3, world.height); ctx.fillRect(493, 0, 3, world.height);
     ctx.fillRect(252, 0, 2, world.height); ctx.fillRect(276, 0, 2, world.height);
     ctx.fillRect(686, 0, 2, world.height); ctx.fillRect(710, 0, 2, world.height);
     ctx.fillRect(0, 185, world.width, 2); ctx.fillRect(0, 209, world.width, 2);
-    ctx.fillRect(0, 399, world.width, 2); ctx.fillRect(0, 423, world.width, 2);
+    ctx.fillRect(0, 399, world.width, 2); ctx.fillRect(0, 423, world.width, 2); ctx.fillRect(0, 618, world.width, 2); ctx.fillRect(0, 642, world.width, 2);
+    ctx.fillRect(880, 0, 2, world.height); ctx.fillRect(904, 0, 2, world.height); ctx.fillRect(1070, 0, 2, world.height); ctx.fillRect(1094, 0, 2, world.height);
     ctx.fillStyle = '#c6c5b7'; ctx.fillRect(0, 291, world.width, 25); ctx.fillRect(459, 0, 24, world.height);
     ctx.fillRect(258, 0, 14, world.height); ctx.fillRect(692, 0, 14, world.height);
-    ctx.fillRect(0, 191, world.width, 14); ctx.fillRect(0, 405, world.width, 14);
+    ctx.fillRect(0, 191, world.width, 14); ctx.fillRect(0, 405, world.width, 14); ctx.fillRect(0, 625, world.width, 14);
+    ctx.fillRect(886, 0, 14, world.height); ctx.fillRect(1076, 0, 14, world.height);
     ctx.fillStyle = '#eee5cb';
-    for (let x = 12; x < world.width; x += 42) ctx.fillRect(x, 303, 23, 3);
-    for (let y = 12; y < world.height; y += 40) { ctx.fillRect(469, y, 3, 19); ctx.fillRect(263, y, 3, 19); ctx.fillRect(697, y, 3, 19); }
+    for (let x = 12; x < world.width; x += 42) { ctx.fillRect(x, 303, 23, 3); ctx.fillRect(x, 632, 23, 3); }
+    for (let y = 12; y < world.height; y += 40) { ctx.fillRect(469, y, 3, 19); ctx.fillRect(263, y, 3, 19); ctx.fillRect(697, y, 3, 19); ctx.fillRect(889, y, 3, 19); ctx.fillRect(1079, y, 3, 19); }
     for (let i = 0; i < 6; i++) { ctx.fillRect(431 + i * 5, 274, 3, 12); ctx.fillRect(500 + i * 5, 325, 3, 12); }
     // Town square garden and working-life details.
     ctx.fillStyle = '#e3ca91'; ctx.fillRect(390, 179, 165, 131);
@@ -301,7 +330,7 @@
     // Flowers in a basket on the porch after pickup.
     if (errands[2].done) { ctx.fillStyle = '#9a6745'; ctx.fillRect(333, 428, 18, 12); ctx.fillStyle = '#db9461'; ctx.fillRect(337, 421, 10, 9); ctx.fillStyle = '#f4d16e'; ctx.fillRect(338, 417, 3, 4); ctx.fillStyle = '#ee9683'; ctx.fillRect(344, 415, 4, 4); }
     // Selected companion and player.
-    drawCompanion();
+    followerChains.flat().reverse().forEach(drawCompanion);
     drawPlayer(player, { shirt: '#e96d56', pants: '#375c4a', hair: '#543e39', badge: '#f5cd64' });
     drawPlayer(player2, { shirt: '#528fc1', pants: '#354b5e', hair: '#453b50', badge: '#f5cd64', cap: '#e3b557' });
     ctx.restore();
@@ -330,9 +359,9 @@
     ctx.fillStyle = colors.badge; ctx.fillRect(x + 6, y - 2, 4, 4);
   }
 
-  function drawCompanion() {
-    const c = companions[activeCompanion];
-    const x = player.x - 18, y = player.y + 8 + Math.sin(playerAnimation * .014) * 1.1;
+  function drawCompanion(follower) {
+    const c = follower.companion;
+    const x = follower.x, y = follower.y + Math.sin(playerAnimation * .014) * 1.1;
     ctx.fillStyle = '#57744c'; ctx.fillRect(x - 7, y + 6, 15, 4);
     ctx.fillStyle = c.color; ctx.fillRect(x - 7, y - 4, 15, 10);
     ctx.fillStyle = '#f3c891'; ctx.fillRect(x - 5, y - 9, 11, 8);
@@ -376,8 +405,12 @@
   }
   function renderUI() {
     document.getElementById('missionCounter').textContent = `${errands.filter(e => e.done).length} / ${errands.length}`;
-    document.getElementById('missionList').innerHTML = errands.map(e => `<div class="mission ${e.done ? 'done' : ''}"><div class="mission-check">${e.done ? '&#10003;' : ''}</div><div><div class="mission-name">${e.name}</div><div class="mission-hint">${e.done ? 'All taken care of!' : e.id === 'soup' && e.phase === 1 ? 'Maple House &middot; Zip' : e.hint}</div></div></div>`).join('');
-    document.getElementById('companionList').innerHTML = companions.map((c, i) => `<button class="companion ${i === activeCompanion ? 'active' : ''}" data-companion="${i}" aria-pressed="${i === activeCompanion}"><span class="companion-icon" style="color:${c.color}">${c.icon}</span><span><span class="companion-name">${c.name}</span><div class="companion-ability">${c.ability}</div></span><span class="companion-key">${i + 1}</span></button>`).join('');
+    document.getElementById('missionList').innerHTML = errands.map(e => {
+      const helperIndex = companions.findIndex(c => c.id === e.companion);
+      const helper = companions[helperIndex];
+      return `<div class="mission ${e.done ? 'done' : ''}"><div class="mission-check">${e.done ? '&#10003;' : ''}</div><div><div class="mission-titleline"><div class="mission-name">${e.name}</div>${e.done ? '' : `<button type="button" class="mission-helper ${activeCompanion === helperIndex ? 'active' : ''}" data-companion="${helperIndex}" aria-pressed="${activeCompanion === helperIndex}" aria-label="Choose ${helper.name}, ${helper.ability}"><span>${helper.icon}</span><span>${helper.name}</span></button>`}</div><div class="mission-hint">${e.done ? 'All taken care of!' : e.id === 'soup' && e.phase === 1 ? 'Maple House &middot; Zip' : e.hint}</div></div></div>`;
+    }).join('');
+    document.getElementById('companionList').innerHTML = companions.map((c, i) => `<button type="button" class="companion ${i === activeCompanion ? 'active' : ''}" data-companion="${i}" aria-pressed="${i === activeCompanion}" aria-label="Choose ${c.name}, ${c.ability}"><span class="companion-icon" style="color:${c.color}">${c.icon}</span><span><span class="companion-name">${c.name}</span><div class="companion-ability">${c.ability}</div></span><span class="companion-key ${i === activeCompanion ? 'active' : ''}">${i === activeCompanion ? 'ACTIVE' : i + 1}</span></button>`).join('');
     document.querySelectorAll('[data-companion]').forEach(btn => btn.addEventListener('click', () => selectCompanion(Number(btn.dataset.companion))));
     document.getElementById('companionTip').textContent = companions[activeCompanion].line;
     if (complete) document.getElementById('townStatus').textContent = 'Every errand done. What a good neighbor!';
@@ -431,6 +464,11 @@
   function resetGame() {
     errands.forEach(e => { e.done = false; if (e.id === 'soup') e.phase = 0; });
     player.x = 480; player.y = 348; player.dir = 'down'; player2.x = 510; player2.y = 348; player2.dir = 'down'; activePlayer = player; soupCollected = false; complete = false; selectCompanion(0); renderUI(); showToast('A fresh new day of errands!');
+    followPaths = [player, player2].map(leader => [{ x: leader.x, y: leader.y }]);
+    followerChains.forEach((chain, chainIndex) => chain.forEach((follower, index) => {
+      const leader = chainIndex === 0 ? player : player2;
+      follower.x = leader.x; follower.y = leader.y - 24 * (index + 1);
+    }));
   }
   function updateTownspeople(dt) {
     townspeople.forEach(person => {
@@ -449,12 +487,44 @@
       else if (dy) person.dir = dy >= 0 ? 'down' : 'up';
     });
   }
+  function updateFollowers(dt) {
+    [player, player2].forEach((leader, chainIndex) => {
+      const followers = followerChains[chainIndex], followPath = followPaths[chainIndex];
+      const lastPoint = followPath[followPath.length - 1];
+      if (distance(lastPoint, leader) >= 3) followPath.push({ x: leader.x, y: leader.y });
+      if (followPath.length > 120) followPath.splice(0, 60);
+      const behind = { up: [0, 1], down: [0, -1], left: [1, 0], right: [-1, 0] }[leader.dir];
+      followers.forEach((follower, index) => {
+        let remaining = 24 * (index + 1), target = null;
+        for (let pointIndex = followPath.length - 1; pointIndex > 0; pointIndex--) {
+          const current = followPath[pointIndex], previous = followPath[pointIndex - 1];
+          const segmentLength = distance(current, previous);
+          if (segmentLength >= remaining) {
+            const ratio = remaining / segmentLength;
+            target = { x: current.x + (previous.x - current.x) * ratio, y: current.y + (previous.y - current.y) * ratio };
+            break;
+          }
+          remaining -= segmentLength;
+        }
+        if (!target) {
+          const start = followPath[0];
+          target = { x: start.x + behind[0] * remaining, y: start.y + behind[1] * remaining };
+        }
+        const dx = target.x - follower.x, dy = target.y - follower.y;
+        const blend = 1 - Math.exp(-dt / 120);
+        follower.x += dx * blend; follower.y += dy * blend;
+        if (Math.abs(dx) > Math.abs(dy)) follower.dir = dx >= 0 ? 'right' : 'left';
+        else if (dy) follower.dir = dy >= 0 ? 'down' : 'up';
+      });
+    });
+  }
   function update(dt) {
     updateTownspeople(dt);
     playerAnimation += dt;
     movePlayer(player, 'a', 'd', 'w', 's', dt);
     movePlayer(player2, 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', dt);
-    const zone = player.x < 330 ? 'CORNER CAFE' : player.x > 690 ? 'DAISY PARK' : player.y < 180 ? 'MAPLE SQUARE' : player.y > 400 ? 'MAPLE STREET' : 'TOWN CROSSROADS';
+    updateFollowers(dt);
+    const zone = player.y > 650 ? 'SOUTH END' : player.x > 905 ? 'EASTSIDE' : player.x < 330 ? 'CORNER CAFE' : player.y < 180 ? 'UPTOWN' : player.x > 690 ? 'DAISY PARK' : player.y > 400 ? 'MAPLE STREET' : 'TOWN CENTER';
     document.getElementById('zoneLabel').textContent = zone;
     nearby = getNearby();
     const prompt = document.getElementById('interaction');
@@ -471,7 +541,7 @@
     actor.step += dt;
     if (Math.abs(dx) > Math.abs(dy)) actor.dir = dx > 0 ? 'right' : 'left';
     else actor.dir = dy > 0 ? 'down' : 'up';
-    const speed = 105 * dt / 1000;
+    const speed = 145 * dt / 1000;
     const nx = Math.max(18, Math.min(world.width - 18, actor.x + dx * speed));
     const ny = Math.max(21, Math.min(world.height - 16, actor.y + dy * speed));
     if (!collide(nx, actor.y)) actor.x = nx;
