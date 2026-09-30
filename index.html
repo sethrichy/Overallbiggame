@@ -37,7 +37,7 @@
   main { display: grid; grid-template-columns: minmax(0, 1fr) 286px; gap: 17px; align-items: stretch; }
   .play-area { min-width: 0; overflow: hidden; border: 3px solid var(--ink); border-radius: 7px; background: #aebbb4; box-shadow: 5px 5px 0 var(--ink); }
   .canvas-wrap { position: relative; width: 100%; aspect-ratio: 8 / 5; overflow: hidden; }
-  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  canvas { display: block; width: 100%; height: 100%; image-rendering: auto; }
   .zone-label { position: absolute; top: 13px; left: 14px; padding: 6px 9px; border: 2px solid var(--ink); border-radius: 3px; background: #f5f7e9eF; font-size: 11px; font-weight: 900; pointer-events: none; }
   .toast { position: absolute; top: 13px; left: 50%; max-width: 75%; transform: translate(-50%, -9px); padding: 8px 12px; border: 2px solid var(--ink); border-radius: 4px; background: var(--sun); font-size: 12px; font-weight: 800; text-align: center; opacity: 0; transition: opacity .16s, transform .16s; pointer-events: none; }
   .toast.show { transform: translate(-50%, 0); opacity: 1; }
@@ -101,6 +101,55 @@
     .bottom-row { grid-column: auto; }
     .canvas-wrap { aspect-ratio: 1 / 1; }
   }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body { min-height: 100dvh; overscroll-behavior: none; }
+  .shell { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; margin: 0; padding: 0; overflow: hidden; }
+  header { display: none; }
+  main { display: block; width: 100%; height: 100%; }
+  .play-area { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .canvas-wrap { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; }
+  canvas { width: 100%; height: 100%; }
+  .zone-label { top: 14px; left: 14px; padding: 7px 10px; border: 0; border-left: 3px solid var(--sun); border-radius: 2px; background: rgba(29, 44, 39, .84); color: #fff; }
+  .toast { top: 14px; padding: 9px 13px; border: 1px solid rgba(255, 255, 255, .35); background: rgba(29, 44, 39, .92); color: #fff; }
+  .interaction { bottom: 48px; border: 1px solid rgba(255, 255, 255, .5); border-radius: 3px; background: rgba(245, 247, 233, .94); }
+  .play-footer { position: absolute; bottom: 12px; left: 50%; width: max-content; min-height: 0; transform: translateX(-50%); border: 0; background: transparent; color: white; text-shadow: 0 1px 4px #172722, 0 1px 2px #172722; pointer-events: none; }
+  .side { position: absolute; inset: 0; display: block; pointer-events: none; }
+  .side .panel { position: absolute; overflow: auto; border: 1px solid rgba(255, 255, 255, .2); border-radius: 4px; background: rgba(29, 44, 39, .88); color: #f5f7e9; box-shadow: none; backdrop-filter: blur(4px); pointer-events: auto; }
+  .missions-panel { top: 14px; right: 14px; width: min(320px, calc(100vw - 28px)); max-height: 40vh; }
+  .panel-title { border-bottom-color: rgba(255, 255, 255, .18); color: #f5f7e9; }
+  .counter { color: #c7d4ca; }
+  .mission { border-bottom-color: rgba(255, 255, 255, .18); }
+  .mission-check { border-color: #b3c4b7; }
+  .mission-hint, .tip, .companion-ability { color: #c7d4ca; }
+  .mission-helper { border-color: rgba(255, 255, 255, .35); }
+  .mission-helper.active { color: var(--ink); }
+  .side > .panel:nth-child(2) { bottom: 14px; left: 14px; width: 280px; }
+  .companion { position: relative; border-color: rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .1); color: #f5f7e9; }
+  .companion.active { border-color: var(--sun); background: rgba(255, 237, 178, .96); color: var(--ink); }
+  .companion.active .companion-ability { color: #53685c; }
+  .companion-icon { border-color: rgba(255, 255, 255, .35); background: rgba(255, 255, 255, .15); }
+  .companion-key { border-color: rgba(255, 255, 255, .35); color: #f5f7e9; }
+  .companion-key.active { border-color: var(--ink); }
+  .tip { display: none; }
+  .bottom-row { position: absolute; top: 55px; left: 14px; right: auto; bottom: auto; margin: 0; color: white; pointer-events: auto; }
+  .bottom-row > span { display: none; }
+  .reset-button { border-color: rgba(255, 255, 255, .3); background: rgba(29, 44, 39, .82); color: white; }
+  .reset-button:hover { background: rgba(29, 44, 39, .96); }
+  @media (max-width: 760px) {
+    .canvas-wrap { aspect-ratio: auto; }
+    .play-footer { display: none; }
+    .side > .panel:nth-child(2) { bottom: 124px; left: 12px; width: calc(100vw - 24px); max-width: 360px; }
+    .companion-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding: 7px; }
+    .companion { display: flex; min-width: 0; min-height: 66px; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 3px; text-align: center; }
+    .companion-icon { width: 30px; height: 30px; font-size: 16px; }
+    .companion-name { font-size: 10px; }
+    .companion-ability { display: none; }
+    .companion-key { position: absolute; top: 3px; right: 3px; width: auto; min-width: 16px; height: 16px; padding: 0 3px; font-size: 8px; }
+    .mobile-controls { position: absolute; right: 12px; bottom: 12px; border: 1px solid rgba(255, 255, 255, .25); border-radius: 4px; background: rgba(29, 44, 39, .88); }
+  }
+  @media (max-width: 410px) {
+    .side > .panel:nth-child(2) { bottom: 124px; }
+  }
 </style>
 </head>
 <body>
@@ -112,12 +161,12 @@
   <main>
     <section class="play-area" aria-label="Game">
       <div class="canvas-wrap">
-        <canvas id="game" width="480" height="300" aria-label="Pixel-art town. Player one moves with WASD; player two moves with the arrow keys."></canvas>
+        <canvas id="game" width="1280" height="820" aria-label="Pixel-art town. Player one moves with WASD; player two moves with the arrow keys."></canvas>
         <div class="zone-label" id="zoneLabel">MAPLE STREET</div>
         <div class="toast" id="toast" aria-live="polite"></div>
         <div class="interaction" id="interaction"></div>
       </div>
-      <div class="play-footer"><span>P1 &middot; WASD</span><span>P2 &middot; ARROWS</span><span>SPACE &middot; INTERACT</span><span>Q / 1-3 &middot; COMPANION</span><span>E &middot; ABILITY</span></div>
+      <div class="play-footer"><span>P1 &middot; WASD</span><span>P2 &middot; ARROWS</span><span>SPACE &middot; INTERACT</span><span>Q / 1-3 &middot; COMPANION</span><span>P1 E &middot; POWER</span><span>P2 0 &middot; POWER</span></div>
       <div class="mobile-controls" aria-label="Touch controls">
         <div class="dpad">
           <button class="touch-button" data-move="up" aria-label="Move up" style="grid-column:2;grid-row:1">&#9650;</button>
@@ -125,7 +174,7 @@
           <button class="touch-button touch-center" data-move="down" aria-label="Move down">&#9660;</button>
           <button class="touch-button" data-move="right" aria-label="Move right" style="grid-column:3;grid-row:2">&#9654;</button>
         </div>
-        <div class="action-pad"><button class="touch-button" data-action="interact">SPACE &middot; TALK</button><button class="touch-button" data-action="ability">E &middot; SKILL</button><button class="touch-button" data-action="cycle" style="grid-column:1/3">Q &middot; SWITCH BUDDY</button></div>
+        <div class="action-pad"><button class="touch-button" data-action="interact">SPACE &middot; TALK</button><button class="touch-button" data-action="ability">P1 E &middot; SKILL</button><button class="touch-button" data-action="cycle">Q &middot; SWITCH</button><button class="touch-button" data-action="ability-p2">P2 0 &middot; SKILL</button></div>
       </div>
     </section>
     <aside class="side" aria-label="Town errands and companions">
@@ -146,17 +195,28 @@
 (() => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
-  const W = canvas.width;
-  const H = canvas.height;
   const world = { width: 1280, height: 820 };
-  const ZOOM = Math.min(W / world.width, H / world.height);
-  const player = { x: 480, y: 348, dir: 'down', moving: false, step: 0 };
-  const player2 = { x: 510, y: 348, dir: 'down', moving: false, step: 0 };
+  let W = canvas.width;
+  let H = canvas.height;
+  let ZOOM = Math.min(W / world.width, H / world.height);
+  const ZIP_DASH_DISTANCE = 145;
+  const player = { name: 'Player 1', x: 480, y: 348, dir: 'down', moving: false, step: 0, freezeTimer: 0, freezeImmunity: 0, shieldTimer: 0, shieldCooldown: 0 };
+  const player2 = { name: 'Player 2', x: 510, y: 348, dir: 'down', moving: false, step: 0, freezeTimer: 0, freezeImmunity: 0, shieldTimer: 0, shieldCooldown: 0 };
   let activePlayer = player;
-  const camera = { x: (world.width - W / ZOOM) / 2, y: (world.height - H / ZOOM) / 2 };
+  const camera = { x: 0, y: 0 };
+  function resizeCanvas() {
+    const bounds = canvas.getBoundingClientRect();
+    const renderScale = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = Math.max(480, Math.round(bounds.width * renderScale));
+    H = Math.max(300, Math.round(bounds.height * renderScale));
+    if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+    ZOOM = Math.min(W / world.width, H / world.height);
+    camera.x = (world.width - W / ZOOM) / 2;
+    camera.y = (world.height - H / ZOOM) / 2;
+  }
   const keys = new Set();
   const companions = [
-    { id: 'bolt', name: 'Bolt', icon: '&#9881;', color: '#e87955', ability: 'Fix-it whiz', line: 'Repairs broken things in a jiffy.' },
+    { id: 'bolt', name: 'Bolt', icon: '&#9881;', color: '#e87955', ability: 'Fix-it whiz + shield', line: 'Repairs broken things. Press E to shield both players from viruses.' },
     { id: 'pip', name: 'Pip', icon: '&#10047;', color: '#7ab657', ability: 'Keen little nose', line: 'Sniffs out things hiding nearby.' },
     { id: 'zip', name: 'Zip', icon: '&#9733;', color: '#568dce', ability: 'Super speedy', line: 'Gets across town in a flash.' }
   ];
@@ -195,6 +255,11 @@
     { name: 'Crosswalk walker', detail: 'Hello from the other side of town!', x: 399, y: 412, shirt: '#709bb5', hair: '#59434b', dir: 'up', phase: 1, speed: 17, route: [[399, 412], [420, 412], [420, 386], [399, 386]], waypoint: 1 },
     { name: 'Cafe regular', detail: 'Smells like a good day for lunch.', x: 270, y: 213, shirt: '#d89e45', hair: '#59484b', dir: 'left', phase: 0, speed: 11, route: [[230, 225], [250, 225], [250, 239], [230, 239]], waypoint: 1 },
     { name: 'Park walker', detail: 'Taking the scenic route today.', x: 830, y: 373, shirt: '#528b75', hair: '#5e4940', dir: 'down', phase: 1, speed: 13, route: [[836, 373], [855, 373], [855, 387], [836, 387]], waypoint: 1 }
+  ];
+  const viruses = [
+    { name: 'Glitch', x: 260, y: 350, speed: 54, phase: 0, stunTimer: 0 },
+    { name: 'Byte', x: 800, y: 355, speed: 48, phase: 1.8, stunTimer: 0 },
+    { name: 'Crash', x: 980, y: 632, speed: 58, phase: 3.4, stunTimer: 0 }
   ];
   let activeCompanion = 0;
   let toastTimeout;
@@ -318,6 +383,7 @@
     ctx.fillStyle = '#59695e'; ctx.fillRect(359, 267, 3, 18); ctx.fillStyle = '#f7e28d'; ctx.fillRect(355, 265, 11, 7);
     ctx.fillStyle = '#f5ecd5'; for (let i = 0; i < 5; i++) { ctx.fillRect(412 + i * 5, 281, 3, 7); ctx.fillRect(520 + i * 5, 321, 3, 7); }
     solids.forEach(drawBuilding);
+    viruses.forEach(drawVirus);
     // A delivery basket waiting outside the cafe.
     ctx.fillStyle = '#8a573f'; ctx.fillRect(297, 201, 15, 11); ctx.fillStyle = '#d49552'; ctx.fillRect(300, 198, 9, 4);
     if (soupCollected) { ctx.fillStyle = '#9a6745'; ctx.fillRect(296, 200, 16, 12); ctx.fillStyle = '#dc9860'; ctx.fillRect(299, 197, 10, 5); }
@@ -346,6 +412,21 @@
     if (phase) { ctx.fillStyle = '#f4d477'; ctx.fillRect(x + 7, y - 11, 3, 3); }
   }
 
+  function drawVirus(virus) {
+    const bob = Math.sin(playerAnimation * .012 + virus.phase) * 2;
+    const x = virus.x, y = virus.y + bob;
+    ctx.fillStyle = '#55465d'; ctx.fillRect(x - 10, y + 11, 21, 5);
+    ctx.fillStyle = '#55285f';
+    ctx.fillRect(x - 12, y - 8, 24, 20);
+    ctx.fillRect(x - 17, y - 4, 5, 7); ctx.fillRect(x + 12, y - 4, 5, 7);
+    ctx.fillRect(x - 8, y - 14, 5, 6); ctx.fillRect(x + 4, y - 14, 5, 6);
+    ctx.fillStyle = '#b843ca'; ctx.fillRect(x - 9, y - 7, 18, 16);
+    ctx.fillStyle = '#ee79ee'; ctx.fillRect(x - 5, y - 10, 5, 3); ctx.fillRect(x + 5, y - 3, 4, 3);
+    ctx.fillStyle = '#e4fbff'; ctx.fillRect(x - 6, y - 2, 3, 4); ctx.fillRect(x + 3, y - 2, 3, 4);
+    ctx.fillStyle = '#482049'; ctx.fillRect(x - 3, y + 5, 7, 2);
+    ctx.fillStyle = '#c9f4ff'; ctx.fillRect(x - 14, y - 13, 2, 3); ctx.fillRect(x + 12, y + 7, 2, 3);
+  }
+
   function drawPlayer(actor, colors) {
     const x = actor.x, y = actor.y + (actor.moving ? Math.sin(playerAnimation * .023) * 1.5 : 0);
     ctx.fillStyle = '#557348'; ctx.fillRect(x - 9, y + 15, 20, 5);
@@ -357,6 +438,16 @@
     if (colors.cap) { ctx.fillStyle = colors.cap; ctx.fillRect(x - 10, y - 20, 21, 4); ctx.fillRect(x - 6, y - 23, 14, 4); }
     if (actor.dir !== 'up') { ctx.fillStyle = '#304037'; const ex = actor.dir === 'left' ? -5 : actor.dir === 'right' ? 4 : -4; ctx.fillRect(x + ex, y - 10, 2, 2); if (actor.dir === 'down') ctx.fillRect(x + 4, y - 10, 2, 2); }
     ctx.fillStyle = colors.badge; ctx.fillRect(x + 6, y - 2, 4, 4);
+    if (actor.shieldTimer > 0) {
+      ctx.fillStyle = 'rgba(102, 231, 241, .14)'; ctx.fillRect(x - 15, y - 27, 30, 50);
+      ctx.strokeStyle = '#79e6f2'; ctx.lineWidth = 2; ctx.strokeRect(x - 14, y - 26, 28, 48);
+      ctx.fillStyle = '#d9fcff'; ctx.fillRect(x - 17, y - 12, 3, 5); ctx.fillRect(x + 14, y + 5, 3, 5);
+    }
+    if (actor.freezeTimer > 0) {
+      ctx.fillStyle = 'rgba(143, 224, 255, .38)'; ctx.fillRect(x - 12, y - 24, 24, 43);
+      ctx.fillStyle = '#dff9ff'; ctx.fillRect(x - 13, y - 24, 26, 2); ctx.fillRect(x - 13, y + 17, 26, 2);
+      ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center'; ctx.fillText('FROZEN', x, y - 28);
+    }
   }
 
   function drawCompanion(follower) {
@@ -382,15 +473,16 @@
     if (selected) return selected;
     return unfinished[0] || null;
   }
-  function getNearby() {
+  function getNearby(forPlayer = null) {
     const targets = [
       ...errands.filter(e => !e.done).map(e => e.id === 'soup' && e.phase === 1 ? { ...e, x: 573, y: 374, object: 'Mrs. Maple', detail: 'Mrs. Maple is waiting for her lunch.' } : e),
       { x: 299, y: 206, object: 'Lunch basket', detail: 'A packed lunch for Mrs. Maple.' },
       ...townspeople.map(person => ({ x: person.x, y: person.y, object: person.name, detail: person.detail }))
     ];
-    const close = targets.map(t => {
-      const playerDistance = distance(player, t), player2Distance = distance(player2, t);
-      return { ...t, d: Math.min(playerDistance, player2Distance), actor: playerDistance <= player2Distance ? player : player2 };
+    const availablePlayers = forPlayer ? [forPlayer] : [player, player2];
+    const close = targets.map(target => {
+      const actor = availablePlayers.reduce((nearest, candidate) => distance(candidate, target) < distance(nearest, target) ? candidate : nearest);
+      return { ...target, d: distance(actor, target), actor };
     }).filter(t => t.d < 38).sort((a, b) => a.d - b.d);
     return close[0] || null;
   }
@@ -436,18 +528,36 @@
     }
     showToast(nearby.detail || 'Hello there, neighbor!');
   }
-  function useAbility() {
-    nearby = getNearby();
+  function useAbility(actor = activePlayer) {
+    nearby = getNearby(actor);
+    if (activeCompanion === 0) {
+      if (nearby && nearby.id === 'fountain' && !nearby.done) {
+        nearby.done = true; complete = errands.every(e => e.done); renderUI(); showToast('Bolt fixed the fountain! Splish splash!'); return;
+      }
+      if ([player, player2].some(actor => actor.shieldTimer > 0)) { showToast("Bolt's shield is already protecting both players!"); return; }
+      if ([player, player2].some(actor => actor.shieldCooldown > 0)) { showToast("Bolt's shield is recharging!"); return; }
+      [player, player2].forEach(actor => { actor.shieldTimer = 5200; actor.shieldCooldown = 9800; });
+      showToast('Bolt shielded both players from viruses!'); return;
+    }
     if (activeCompanion === 2) {
       if (nearby && nearby.id === 'soup' && nearby.phase === 0) {
         showToast('Zip is ready to race! Press SPACE to pick up the lunch.'); return;
       }
       const target = errands.find(e => e.id === 'soup' && e.phase === 1 && !e.done);
-      if (target && distance(activePlayer, { x: 573, y: 374 }) < 48) {
+      if (target && distance(actor, { x: 573, y: 374 }) < 48) {
         showToast('Zip zipped the lunch to Mrs. Maple!'); target.done = true; complete = errands.every(e => e.done); renderUI(); return;
       }
-      activePlayer.x = Math.max(22, Math.min(world.width - 22, activePlayer.x + (activePlayer.dir === 'left' ? -45 : activePlayer.dir === 'right' ? 45 : 0)));
-      activePlayer.y = Math.max(24, Math.min(world.height - 22, activePlayer.y + (activePlayer.dir === 'up' ? -45 : activePlayer.dir === 'down' ? 45 : 0)));
+      const directions = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+      const [dashX, dashY] = directions[actor.dir];
+      let dashDistance = ZIP_DASH_DISTANCE, destination = null;
+      while (dashDistance > 0 && !destination) {
+        const x = Math.max(22, Math.min(world.width - 22, actor.x + dashX * dashDistance));
+        const y = Math.max(24, Math.min(world.height - 22, actor.y + dashY * dashDistance));
+        if (!collide(x, y)) destination = { x, y };
+        else dashDistance -= 10;
+      }
+      if (!destination) { showToast('Zip needs a clear landing spot!'); return; }
+      actor.x = destination.x; actor.y = destination.y;
       showToast('Zip! A quick little dash!'); return;
     }
     if (!nearby || !nearby.id || nearby.id === 'soup' || nearby.done) {
@@ -463,7 +573,9 @@
   }
   function resetGame() {
     errands.forEach(e => { e.done = false; if (e.id === 'soup') e.phase = 0; });
-    player.x = 480; player.y = 348; player.dir = 'down'; player2.x = 510; player2.y = 348; player2.dir = 'down'; activePlayer = player; soupCollected = false; complete = false; selectCompanion(0); renderUI(); showToast('A fresh new day of errands!');
+    player.x = 480; player.y = 348; player.dir = 'down'; player.freezeTimer = 0; player.freezeImmunity = 0; player.shieldTimer = 0; player.shieldCooldown = 0;
+    player2.x = 510; player2.y = 348; player2.dir = 'down'; player2.freezeTimer = 0; player2.freezeImmunity = 0; player2.shieldTimer = 0; player2.shieldCooldown = 0;
+    activePlayer = player; soupCollected = false; complete = false; selectCompanion(0); renderUI(); showToast('A fresh new day of errands!');
     followPaths = [player, player2].map(leader => [{ x: leader.x, y: leader.y }]);
     followerChains.forEach((chain, chainIndex) => chain.forEach((follower, index) => {
       const leader = chainIndex === 0 ? player : player2;
@@ -485,6 +597,45 @@
       }
       if (Math.abs(dx) > Math.abs(dy)) person.dir = dx >= 0 ? 'right' : 'left';
       else if (dy) person.dir = dy >= 0 ? 'down' : 'up';
+    });
+  }
+  function updateViruses(dt) {
+    const targets = [player, player2].filter(actor => actor.freezeTimer <= 0);
+    if (!targets.length) return;
+    viruses.forEach(virus => {
+      virus.stunTimer = Math.max(0, virus.stunTimer - dt);
+      if (virus.stunTimer > 0) return;
+      const target = targets.reduce((nearest, actor) => distance(virus, actor) < distance(virus, nearest) ? actor : nearest);
+      const dx = target.x - virus.x, dy = target.y - virus.y;
+      const distanceToTarget = Math.hypot(dx, dy);
+      if (distanceToTarget < 22 || distanceToTarget > 360) return;
+      const step = Math.min(distanceToTarget - 18, virus.speed * dt / 1000);
+      const nextX = virus.x + dx / distanceToTarget * step;
+      const nextY = virus.y + dy / distanceToTarget * step;
+      if (!collide(nextX, virus.y)) virus.x = nextX;
+      if (!collide(virus.x, nextY)) virus.y = nextY;
+    });
+  }
+  function tagPlayersWithViruses() {
+    [player, player2].forEach(actor => {
+      if (actor.freezeTimer > 0 || actor.freezeImmunity > 0) return;
+      const virus = viruses.find(enemy => distance(actor, enemy) < 22);
+      if (!virus) return;
+      if (actor.shieldTimer > 0) {
+        const dx = virus.x - actor.x, dy = virus.y - actor.y;
+        const separation = Math.hypot(dx, dy) || 1;
+        const knockback = 34;
+        const nextX = Math.max(22, Math.min(world.width - 22, virus.x + dx / separation * knockback));
+        const nextY = Math.max(24, Math.min(world.height - 22, virus.y + dy / separation * knockback));
+        if (!collide(nextX, virus.y)) virus.x = nextX;
+        if (!collide(virus.x, nextY)) virus.y = nextY;
+        virus.stunTimer = 1000;
+        showToast(`Bolt's shield repelled ${virus.name}!`); return;
+      }
+      actor.freezeTimer = 2200;
+      actor.freezeImmunity = 4000;
+      actor.moving = false;
+      showToast(`${virus.name} grabbed ${actor.name}! Frozen for a moment!`);
     });
   }
   function updateFollowers(dt) {
@@ -520,9 +671,11 @@
   }
   function update(dt) {
     updateTownspeople(dt);
+    updateViruses(dt);
     playerAnimation += dt;
     movePlayer(player, 'a', 'd', 'w', 's', dt);
     movePlayer(player2, 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', dt);
+    tagPlayersWithViruses();
     updateFollowers(dt);
     const zone = player.y > 650 ? 'SOUTH END' : player.x > 905 ? 'EASTSIDE' : player.x < 330 ? 'CORNER CAFE' : player.y < 180 ? 'UPTOWN' : player.x > 690 ? 'DAISY PARK' : player.y > 400 ? 'MAPLE STREET' : 'TOWN CENTER';
     document.getElementById('zoneLabel').textContent = zone;
@@ -535,7 +688,12 @@
     let dx = Number(keys.has(right)) - Number(keys.has(left));
     let dy = Number(keys.has(down)) - Number(keys.has(up));
     if (dx && dy) { dx *= .7071; dy *= .7071; }
+    actor.freezeTimer = Math.max(0, actor.freezeTimer - dt);
+    actor.freezeImmunity = Math.max(0, actor.freezeImmunity - dt);
+    actor.shieldTimer = Math.max(0, actor.shieldTimer - dt);
+    actor.shieldCooldown = Math.max(0, actor.shieldCooldown - dt);
     actor.moving = Boolean(dx || dy);
+    if (actor.freezeTimer > 0) { actor.moving = false; return; }
     if (!actor.moving) return;
     activePlayer = actor;
     actor.step += dt;
@@ -554,17 +712,19 @@
   window.addEventListener('keydown', e => {
     const key = e.key.toLowerCase();
     if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', ' '].includes(key)) e.preventDefault();
-    if ([' ', 'e', 'q', '1', '2', '3'].includes(key) && e.repeat) return;
+    if ([' ', 'e', '0', 'q', '1', '2', '3'].includes(key) && e.repeat) return;
     if (['a', 'd', 'w', 's'].includes(key)) activePlayer = player;
     if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) activePlayer = player2;
     keys.add(key);
     if (key === ' ') interact();
-    if (key === 'e') useAbility();
+    if (key === 'e') useAbility(player);
+    if (key === '0') useAbility(player2);
     if (key === 'q') selectCompanion(activeCompanion + 1);
     if (key === '1' || key === '2' || key === '3') selectCompanion(Number(key) - 1);
   });
   window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
   window.addEventListener('blur', () => keys.clear());
+  window.addEventListener('resize', resizeCanvas);
   document.getElementById('resetButton').addEventListener('click', resetGame);
   document.querySelectorAll('[data-move]').forEach(btn => {
     const keyByMove = { up: 'arrowup', down: 'arrowdown', left: 'arrowleft', right: 'arrowright' };
@@ -573,8 +733,10 @@
     btn.addEventListener('pointerdown', down); btn.addEventListener('pointerup', up); btn.addEventListener('pointerleave', up); btn.addEventListener('pointercancel', up);
   });
   document.querySelector('[data-action="interact"]').addEventListener('click', interact);
-  document.querySelector('[data-action="ability"]').addEventListener('click', useAbility);
+  document.querySelector('[data-action="ability"]').addEventListener('click', () => useAbility(player));
+  document.querySelector('[data-action="ability-p2"]').addEventListener('click', () => useAbility(player2));
   document.querySelector('[data-action="cycle"]').addEventListener('click', () => selectCompanion(activeCompanion + 1));
+  resizeCanvas();
   renderUI();
   requestAnimationFrame(frame);
 })();
