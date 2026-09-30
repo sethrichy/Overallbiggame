@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#d8f4d2">
+<title>Little Town, Big Day</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #243b35;
+    --muted: #688078;
+    --paper: #f5f7e9;
+    --green: #318761;
+    --line: #c9ddc4;
+    --coral: #ed775d;
+    --sun: #f5cd64;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    background-color: #d9e1dc;
+    background-image: radial-gradient(#c1cdc6 1.4px, transparent 1.4px);
+    background-size: 18px 18px;
+    font-family: "Trebuchet MS", "Courier New", sans-serif;
+  }
+  button { font: inherit; color: inherit; }
+  .shell { width: min(1440px, 100%); margin: 0 auto; padding: 19px 24px 24px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 1px 14px; }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border: 2px solid var(--ink); border-radius: 5px; background: var(--sun); font-size: 24px; box-shadow: 3px 3px 0 var(--ink); }
+  h1 { margin: 0; font-size: 21px; letter-spacing: .3px; }
+  .tagline { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+  .day-pill { padding: 9px 13px; border: 2px solid var(--ink); border-radius: 5px; background: var(--paper); box-shadow: 2px 2px 0 var(--ink); font-size: 12px; font-weight: 800; white-space: nowrap; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 286px; gap: 17px; align-items: stretch; }
+  .play-area { min-width: 0; overflow: hidden; border: 3px solid var(--ink); border-radius: 7px; background: #aebbb4; box-shadow: 5px 5px 0 var(--ink); }
+  .canvas-wrap { position: relative; width: 100%; aspect-ratio: 8 / 5; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  .zone-label { position: absolute; top: 13px; left: 14px; padding: 6px 9px; border: 2px solid var(--ink); border-radius: 3px; background: #f5f7e9eF; font-size: 11px; font-weight: 900; pointer-events: none; }
+  .toast { position: absolute; top: 13px; left: 50%; max-width: 75%; transform: translate(-50%, -9px); padding: 8px 12px; border: 2px solid var(--ink); border-radius: 4px; background: var(--sun); font-size: 12px; font-weight: 800; text-align: center; opacity: 0; transition: opacity .16s, transform .16s; pointer-events: none; }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
+  .interaction { position: absolute; bottom: 13px; left: 50%; transform: translateX(-50%); padding: 7px 11px; border: 2px solid var(--ink); border-radius: 3px; background: var(--paper); font-size: 11px; font-weight: 800; opacity: 0; transition: opacity .12s; pointer-events: none; white-space: nowrap; }
+  .interaction.show { opacity: 1; }
+  .play-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 5px 13px; min-height: 39px; padding: 7px 11px; border-top: 2px solid var(--ink); background: #f5f7e9; color: #49645a; font-size: 10px; }
+  .side { display: flex; flex-direction: column; gap: 12px; }
+  .panel { overflow: hidden; border: 2px solid var(--ink); border-radius: 5px; background: var(--paper); box-shadow: 3px 3px 0 var(--ink); }
+  .panel-title { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 900; text-transform: uppercase; }
+  .counter { color: var(--muted); font-size: 10px; }
+  .mission-list { display: grid; gap: 0; padding: 1px 12px; }
+  .mission { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+  .mission:last-child { border: 0; }
+  .mission-check { display: grid; place-items: center; width: 18px; height: 18px; border: 2px solid #82988d; border-radius: 3px; color: white; font-size: 11px; font-weight: 900; }
+  .mission.done .mission-check { border-color: var(--green); background: var(--green); }
+  .mission-name { font-size: 11px; font-weight: 900; }
+  .mission-hint { margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+  .companion-list { display: grid; gap: 6px; padding: 9px; }
+  .companion { display: grid; grid-template-columns: 33px 1fr 22px; align-items: center; gap: 8px; min-height: 49px; padding: 6px 8px; border: 1.5px solid transparent; border-radius: 4px; background: #eaf2df; text-align: left; cursor: pointer; transition: background .12s, border-color .12s, transform .12s; }
+  .companion:hover { transform: translateX(2px); }
+  .companion.active { border-color: var(--ink); background: #ffedb2; box-shadow: 2px 2px 0 var(--ink); }
+  .companion-icon { display: grid; place-items: center; width: 31px; height: 31px; border: 1.5px solid var(--ink); border-radius: 4px; background: #d5e9ca; font-size: 18px; }
+  .companion-name { font-size: 11px; font-weight: 900; }
+  .companion-ability { margin-top: 3px; color: var(--muted); font-size: 9px; }
+  .companion-key { display: grid; place-items: center; width: 19px; height: 19px; border: 1px solid #9bb0a0; border-radius: 3px; color: var(--muted); font-size: 10px; font-weight: 900; }
+  .tip { padding: 9px 11px; border-top: 1px solid var(--line); color: #536d61; font-size: 10px; line-height: 1.55; }
+  .bottom-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 9px; color: #526e61; font-size: 10px; }
+  .reset-button { padding: 5px 8px; border: 1px solid #779187; border-radius: 3px; background: var(--paper); font-size: 10px; cursor: pointer; }
+  .reset-button:hover { background: white; }
+  .mobile-controls { display: none; }
+  @media (max-width: 760px) {
+    .shell { padding: 12px 12px 18px; }
+    header { margin-bottom: 10px; }
+    h1 { font-size: 17px; }
+    .tagline { font-size: 10px; }
+    .brand-mark { width: 36px; height: 36px; font-size: 20px; }
+    .day-pill { padding: 7px 9px; font-size: 10px; }
+    main { grid-template-columns: 1fr; gap: 12px; }
+    .play-area { box-shadow: 3px 3px 0 var(--ink); }
+    .canvas-wrap { aspect-ratio: 4 / 3; }
+    .play-footer { font-size: 9px; }
+    .side { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .missions-panel { grid-row: span 2; }
+    .bottom-row { grid-column: 1 / -1; margin-top: 0; }
+    .mobile-controls { display: flex; justify-content: space-between; gap: 10px; padding: 10px; border-top: 2px solid var(--ink); background: #e8f0dc; }
+    .dpad { display: grid; grid-template-columns: repeat(3, 39px); grid-template-rows: repeat(2, 34px); gap: 3px; }
+    .touch-button { border: 1.5px solid var(--ink); border-radius: 4px; background: var(--paper); font-size: 14px; font-weight: 900; box-shadow: 2px 2px 0 var(--ink); touch-action: none; }
+    .dpad .touch-button { font-size: 16px; }
+    .touch-center { grid-column: 2; grid-row: 2; }
+    .action-pad { display: grid; grid-template-columns: 56px 56px; grid-template-rows: 34px 34px; gap: 6px; align-content: center; }
+    .action-pad .touch-button { font-size: 10px; }
+  }
+  @media (max-width: 410px) {
+    .side { grid-template-columns: 1fr; }
+    .missions-panel { grid-row: auto; }
+    .bottom-row { grid-column: auto; }
+    .canvas-wrap { aspect-ratio: 1 / 1; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand"><div class="brand-mark" aria-hidden="true">&#10047;</div><div><h1>Little Town, Big Day</h1><p class="tagline">A pocket-sized neighborhood adventure</p></div></div>
+    <div class="day-pill">&#9728; &nbsp; TUESDAY &middot; SUNNY</div>
+  </header>
+  <main>
+    <section class="play-area" aria-label="Game">
+      <div class="canvas-wrap">
+        <canvas id="game" width="480" height="300" aria-label="Pixel-art town. Player one moves with WASD; player two moves with the arrow keys."></canvas>
+        <div class="zone-label" id="zoneLabel">MAPLE STREET</div>
+        <div class="toast" id="toast" aria-live="polite"></div>
+        <div class="interaction" id="interaction"></div>
+      </div>
+      <div class="play-footer"><span>P1 &middot; WASD</span><span>P2 &middot; ARROWS</span><span>SPACE &middot; INTERACT</span><span>Q / 1-3 &middot; COMPANION</span><span>E &middot; ABILITY</span></div>
+      <div class="mobile-controls" aria-label="Touch controls">
+        <div class="dpad">
+          <button class="touch-button" data-move="up" aria-label="Move up" style="grid-column:2;grid-row:1">&#9650;</button>
+          <button class="touch-button" data-move="left" aria-label="Move left" style="grid-column:1;grid-row:2">&#9664;</button>
+          <button class="touch-button touch-center" data-move="down" aria-label="Move down">&#9660;</button>
+          <button class="touch-button" data-move="right" aria-label="Move right" style="grid-column:3;grid-row:2">&#9654;</button>
+        </div>
+        <div class="action-pad"><button class="touch-button" data-action="interact">SPACE &middot; TALK</button><button class="touch-button" data-action="ability">E &middot; SKILL</button><button class="touch-button" data-action="cycle" style="grid-column:1/3">Q &middot; SWITCH BUDDY</button></div>
+      </div>
+    </section>
+    <aside class="side" aria-label="Town errands and companions">
+      <section class="panel missions-panel">
+        <div class="panel-title"><span>Today's errands</span><span class="counter" id="missionCounter">0 / 3</span></div>
+        <div class="mission-list" id="missionList"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-title"><span>Your companions</span><span class="counter">PICK ONE</span></div>
+        <div class="companion-list" id="companionList"></div>
+        <div class="tip" id="companionTip">Walk up to something interesting, then press SPACE to interact.</div>
+      </section>
+      <div class="bottom-row"><span id="townStatus">A lovely day to help out.</span><button class="reset-button" id="resetButton" title="Restart your errands">&#8635; Start over</button></div>
+    </aside>
+  </main>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  const ZOOM = Math.min(W / 960, H / 640);
+  const world = { width: 960, height: 640 };
+  const player = { x: 480, y: 348, dir: 'down', moving: false, step: 0 };
+  const player2 = { x: 510, y: 348, dir: 'down', moving: false, step: 0 };
+  let activePlayer = player;
+  const camera = { x: 0, y: 0 };
+  const keys = new Set();
+  const companions = [
+    { id: 'bolt', name: 'Bolt', icon: '&#9881;', color: '#e87955', ability: 'Fix-it whiz', line: 'Repairs broken things in a jiffy.' },
+    { id: 'pip', name: 'Pip', icon: '&#10047;', color: '#7ab657', ability: 'Keen little nose', line: 'Sniffs out things hiding nearby.' },
+    { id: 'zip', name: 'Zip', icon: '&#9733;', color: '#568dce', ability: 'Super speedy', line: 'Gets across town in a flash.' }
+  ];
+  const errands = [
+    { id: 'fountain', name: 'Wake up the fountain', hint: 'Maple Square &middot; Bolt', x: 478, y: 225, companion: 'bolt', object: 'Dry fountain', detail: 'The fountain is all clogged up.', done: false },
+    { id: 'flowers', name: 'Find the lost flowers', hint: 'Daisy Park &middot; Pip', x: 800, y: 438, companion: 'pip', object: 'Garden patch', detail: 'Someone dropped a bundle of daisies.', done: false },
+    { id: 'soup', name: 'Deliver a warm lunch', hint: 'Corner Cafe &middot; Zip', x: 299, y: 206, companion: 'zip', object: 'Cafe window', detail: 'A warm lunch is ready for Mrs. Maple.', done: false, phase: 0 }
+  ];
+  const solids = [
+    { x: 48, y: 56, w: 180, h: 122, type: 'home', name: 'ROOF' },
+    { x: 345, y: 43, w: 204, h: 116, type: 'shop', name: 'CORNER CAFE' },
+    { x: 710, y: 56, w: 188, h: 126, type: 'home2', name: 'POST OFFICE' },
+    { x: 45, y: 390, w: 170, h: 133, type: 'shop2', name: 'BOOK NOOK' },
+    { x: 332, y: 458, w: 192, h: 133, type: 'home3', name: 'MAPLE HOUSE' },
+    { x: 712, y: 446, w: 186, h: 143, type: 'home', name: 'BAKERY' },
+    { x: 280, y: 190, w: 74, h: 42, type: 'tree' },
+    { x: 612, y: 330, w: 83, h: 48, type: 'tree' },
+    { x: 720, y: 226, w: 72, h: 41, type: 'tree' }
+  ];
+  const townspeople = [
+    { name: 'Park neighbor', detail: 'Beautiful day for a stroll.', x: 801, y: 371, shirt: '#d48663', hair: '#573f38', dir: 'down', phase: 0, speed: 15, route: [[801, 371], [830, 371], [830, 383], [801, 383]], waypoint: 1 },
+    { name: 'Town neighbor', detail: 'The town is extra lovely today.', x: 387, y: 356, shirt: '#628a56', hair: '#565245', dir: 'left', phase: 1, speed: 12, route: [[387, 356], [405, 356], [405, 366], [387, 366]], waypoint: 1 },
+    { name: 'Bookshop regular', detail: 'Just browsing the neighborhood.', x: 230, y: 435, shirt: '#a0698c', hair: '#e0c39a', dir: 'right', phase: 0, speed: 14, route: [[230, 435], [252, 435], [252, 366], [230, 366]], waypoint: 1 },
+    { name: 'Crosswalk walker', detail: 'Hello from the other side of town!', x: 399, y: 412, shirt: '#709bb5', hair: '#59434b', dir: 'up', phase: 1, speed: 17, route: [[399, 412], [420, 412], [420, 386], [399, 386]], waypoint: 1 },
+    { name: 'Cafe regular', detail: 'Smells like a good day for lunch.', x: 270, y: 213, shirt: '#d89e45', hair: '#59484b', dir: 'left', phase: 0, speed: 11, route: [[230, 225], [250, 225], [250, 239], [230, 239]], waypoint: 1 },
+    { name: 'Park walker', detail: 'Taking the scenic route today.', x: 830, y: 373, shirt: '#528b75', hair: '#5e4940', dir: 'down', phase: 1, speed: 13, route: [[836, 373], [855, 373], [855, 387], [836, 387]], waypoint: 1 }
+  ];
+  let activeCompanion = 0;
+  let toastTimeout;
+  let lastTime = 0;
+  let nearby = null;
+  let soupCollected = false;
+  let complete = false;
+  let playerAnimation = 0;
+
+  function drawBuilding(b) {
+    if (b.type.startsWith('home')) {
+      const brick = b.type === 'home2' ? '#778f91' : b.type === 'home3' ? '#bd755f' : '#b69b78';
+      ctx.fillStyle = '#68716c'; ctx.fillRect(b.x + 7, b.y + 7, b.w, b.h);
+      ctx.fillStyle = brick; ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.fillStyle = '#ddd0ad'; ctx.fillRect(b.x + 5, b.y + 5, b.w - 10, 5);
+      ctx.fillStyle = '#665d54'; ctx.fillRect(b.x - 2, b.y + b.h - 5, b.w + 4, 7);
+      ctx.fillStyle = '#4d5c58'; ctx.fillRect(b.x + 9, b.y + 14, b.w - 18, 3);
+      for (let wx = b.x + 14, column = 0; wx < b.x + b.w - 22; wx += 27, column++) {
+        for (let wy = b.y + 24, floor = 0; wy < b.y + b.h - 24; wy += 21, floor++) {
+          ctx.fillStyle = '#e0cc9f'; ctx.fillRect(wx - 2, wy - 2, 16, 16);
+          ctx.fillStyle = (column + floor + (b.type === 'home2' ? 1 : 0)) % 4 === 0 ? '#f3cf79' : '#41575b';
+          ctx.fillRect(wx, wy, 12, 12);
+          ctx.fillStyle = '#849799'; ctx.fillRect(wx + 5, wy, 2, 12); ctx.fillRect(wx, wy + 5, 12, 2);
+        }
+      }
+      ctx.fillStyle = '#454d49'; ctx.fillRect(b.x + 13, b.y + 8, 20, 5); ctx.fillRect(b.x + b.w - 35, b.y + 8, 22, 5);
+      ctx.fillStyle = '#89674f'; ctx.fillRect(b.x + b.w / 2 - 8, b.y + b.h - 23, 16, 18);
+      ctx.fillStyle = '#eacb79'; ctx.fillRect(b.x + b.w / 2 + 3, b.y + b.h - 15, 2, 3);
+      if (b.type === 'home2') {
+        ctx.fillStyle = '#71665c'; ctx.fillRect(b.x + b.w - 37, b.y + 15, 3, b.h - 40);
+        for (let fy = b.y + 30; fy < b.y + b.h - 25; fy += 22) { ctx.fillRect(b.x + b.w - 43, fy, 16, 3); ctx.fillRect(b.x + b.w - 44, fy - 2, 3, 10); }
+      }
+      ctx.fillStyle = '#61615a'; ctx.fillRect(b.x + 19, b.y - 5, 24, 6); ctx.fillRect(b.x + b.w - 38, b.y - 9, 23, 10);
+    } else if (b.type.startsWith('shop')) {
+      ctx.fillStyle = '#64766b'; ctx.fillRect(b.x + 5, b.y + 42, b.w, b.h - 39);
+      ctx.fillStyle = '#f3d890'; ctx.fillRect(b.x + 8, b.y + 41, b.w - 16, b.h - 42);
+      ctx.fillStyle = b.type === 'shop' ? '#5a97a2' : '#896d9b'; ctx.fillRect(b.x, b.y + 12, b.w, 39);
+      ctx.fillStyle = b.type === 'shop' ? '#70b6aa' : '#a084b0'; ctx.fillRect(b.x + 8, b.y + 4, b.w - 16, 13);
+      for (let sx = b.x + 5; sx < b.x + b.w - 5; sx += 20) { ctx.fillStyle = '#f4efd8'; ctx.fillRect(sx, b.y + 39, 10, 12); }
+      ctx.fillStyle = '#f6e6bd'; ctx.fillRect(b.x + 15, b.y + 64, b.w - 30, 25);
+      ctx.fillStyle = '#73a6a3'; ctx.fillRect(b.x + 18, b.y + 67, b.w - 36, 19);
+      ctx.fillStyle = '#f9e9c7'; ctx.fillRect(b.x + 21, b.y + 60, b.w - 42, 7);
+      ctx.fillStyle = '#79594b'; ctx.fillRect(b.x + b.w - 30, b.y + b.h - 39, 19, 39);
+      ctx.fillStyle = '#f9df8a'; ctx.fillRect(b.x + b.w - 16, b.y + b.h - 21, 3, 4);
+      ctx.fillStyle = '#42614f'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center'; ctx.fillText(b.name, b.x + b.w / 2, b.y + 34);
+    } else {
+      ctx.fillStyle = '#9a7951'; ctx.fillRect(b.x + 2, b.y + b.h - 8, b.w - 4, 9);
+      ctx.fillStyle = '#566f5b'; ctx.fillRect(b.x + 7, b.y + 12, b.w - 14, b.h - 22);
+      ctx.fillStyle = '#819a69'; ctx.fillRect(b.x + 3, b.y + 4, b.w - 8, b.h - 24);
+      ctx.fillStyle = '#b4c486'; ctx.fillRect(b.x + 8, b.y + 1, b.w - 19, b.h - 33);
+      ctx.fillStyle = '#d0a277'; ctx.fillRect(b.x + b.w / 2 - 5, b.y + b.h - 22, 13, 24);
+      ctx.fillStyle = '#dce6d1'; ctx.fillRect(b.x + 2, b.y + b.h - 10, b.w - 4, 3);
+    }
+  }
+
+  function drawWorld() {
+    ctx.fillStyle = '#aebbb4'; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.scale(ZOOM, ZOOM); ctx.translate(-camera.x, -camera.y);
+    // Concrete city blocks and a fine sidewalk grid.
+    ctx.fillStyle = '#b8c0b8'; ctx.fillRect(0, 0, world.width, world.height);
+    for (let y = 0; y < world.height; y += 20) for (let x = 0; x < world.width; x += 24) {
+      if (((x / 24 + y / 20) % 3) === 0) { ctx.fillStyle = '#b1bab2'; ctx.fillRect(x, y, 22, 18); }
+      ctx.fillStyle = '#a5b0a8'; ctx.fillRect(x, y + 19, 24, 1);
+    }
+    // Two avenues and a cross-town street make a compact Manhattan grid.
+    ctx.fillStyle = '#d3d0c2';
+    ctx.fillRect(0, 259, world.width, 90); ctx.fillRect(423, 0, 96, world.height);
+    ctx.fillRect(242, 0, 46, world.height); ctx.fillRect(676, 0, 46, world.height);
+    ctx.fillRect(0, 177, world.width, 42); ctx.fillRect(0, 391, world.width, 42);
+    ctx.fillStyle = '#8a9693';
+    ctx.fillRect(0, 282, world.width, 43); ctx.fillRect(449, 0, 44, world.height);
+    ctx.fillRect(254, 0, 22, world.height); ctx.fillRect(688, 0, 22, world.height);
+    ctx.fillRect(0, 187, world.width, 22); ctx.fillRect(0, 401, world.width, 22);
+    ctx.fillStyle = '#e1d8bd';
+    ctx.fillRect(0, 280, world.width, 3); ctx.fillRect(0, 325, world.width, 3);
+    ctx.fillRect(446, 0, 3, world.height); ctx.fillRect(493, 0, 3, world.height);
+    ctx.fillRect(252, 0, 2, world.height); ctx.fillRect(276, 0, 2, world.height);
+    ctx.fillRect(686, 0, 2, world.height); ctx.fillRect(710, 0, 2, world.height);
+    ctx.fillRect(0, 185, world.width, 2); ctx.fillRect(0, 209, world.width, 2);
+    ctx.fillRect(0, 399, world.width, 2); ctx.fillRect(0, 423, world.width, 2);
+    ctx.fillStyle = '#c6c5b7'; ctx.fillRect(0, 291, world.width, 25); ctx.fillRect(459, 0, 24, world.height);
+    ctx.fillRect(258, 0, 14, world.height); ctx.fillRect(692, 0, 14, world.height);
+    ctx.fillRect(0, 191, world.width, 14); ctx.fillRect(0, 405, world.width, 14);
+    ctx.fillStyle = '#eee5cb';
+    for (let x = 12; x < world.width; x += 42) ctx.fillRect(x, 303, 23, 3);
+    for (let y = 12; y < world.height; y += 40) { ctx.fillRect(469, y, 3, 19); ctx.fillRect(263, y, 3, 19); ctx.fillRect(697, y, 3, 19); }
+    for (let i = 0; i < 6; i++) { ctx.fillRect(431 + i * 5, 274, 3, 12); ctx.fillRect(500 + i * 5, 325, 3, 12); }
+    // Town square garden and working-life details.
+    ctx.fillStyle = '#e3ca91'; ctx.fillRect(390, 179, 165, 131);
+    ctx.fillStyle = '#83b45c'; ctx.fillRect(401, 188, 142, 113);
+    ctx.fillStyle = '#ddce9e'; ctx.fillRect(464, 188, 16, 113); ctx.fillRect(401, 236, 142, 15);
+    ctx.fillStyle = '#65874e'; ctx.fillRect(436, 210, 7, 25); ctx.fillRect(504, 254, 8, 23);
+    ctx.fillStyle = '#ae7654'; ctx.fillRect(433, 208, 13, 5); ctx.fillRect(501, 252, 15, 5);
+    // Fountain.
+    ctx.fillStyle = '#68796d'; ctx.fillRect(453, 202, 51, 41);
+    ctx.fillStyle = errands[0].done ? '#61c9d0' : '#81978a'; ctx.fillRect(458, 207, 41, 30);
+    ctx.fillStyle = '#b6dce0'; ctx.fillRect(465, 214, 27, 16);
+    ctx.fillStyle = '#63796d'; ctx.fillRect(474, 216, 9, 14); ctx.fillRect(477, 208, 4, 12);
+    if (errands[0].done) { ctx.fillStyle = '#9cebf1'; ctx.fillRect(475, 199, 9, 5); ctx.fillRect(478, 194, 3, 6); }
+    // Park patch and flowers.
+    ctx.fillStyle = '#dabd81'; ctx.fillRect(738, 407, 116, 61); ctx.fillStyle = '#8eae5a'; ctx.fillRect(744, 413, 104, 49);
+    const flowerColors = ['#f6da78', '#ee9487', '#efe7d3', '#d99ac4'];
+    for (let i = 0; i < 9; i++) { const fx = 754 + (i * 29) % 85, fy = 420 + (i * 19) % 31; ctx.fillStyle = errands[1].done || i !== 4 ? flowerColors[i % 4] : '#628449'; ctx.fillRect(fx, fy, 5, 5); ctx.fillRect(fx + 2, fy - 2, 3, 3); ctx.fillStyle = '#698d4d'; ctx.fillRect(fx + 2, fy + 5, 2, 5); }
+    // Cafe's little outdoor table.
+    ctx.fillStyle = '#aa7550'; ctx.fillRect(385, 165, 34, 4); ctx.fillRect(390, 169, 3, 12); ctx.fillRect(411, 169, 3, 12); ctx.fillStyle = '#f3e2c4'; ctx.fillRect(394, 162, 15, 5);
+    // Benches, planters, lamp posts and crossing marks.
+    ctx.fillStyle = '#885b43'; ctx.fillRect(560, 271, 35, 5); ctx.fillRect(564, 277, 3, 8); ctx.fillRect(587, 277, 3, 8);
+    ctx.fillStyle = '#799755'; ctx.fillRect(579, 211, 18, 14); ctx.fillStyle = '#a1c06e'; ctx.fillRect(583, 207, 11, 10);
+    ctx.fillStyle = '#59695e'; ctx.fillRect(359, 267, 3, 18); ctx.fillStyle = '#f7e28d'; ctx.fillRect(355, 265, 11, 7);
+    ctx.fillStyle = '#f5ecd5'; for (let i = 0; i < 5; i++) { ctx.fillRect(412 + i * 5, 281, 3, 7); ctx.fillRect(520 + i * 5, 321, 3, 7); }
+    solids.forEach(drawBuilding);
+    // A delivery basket waiting outside the cafe.
+    ctx.fillStyle = '#8a573f'; ctx.fillRect(297, 201, 15, 11); ctx.fillStyle = '#d49552'; ctx.fillRect(300, 198, 9, 4);
+    if (soupCollected) { ctx.fillStyle = '#9a6745'; ctx.fillRect(296, 200, 16, 12); ctx.fillStyle = '#dc9860'; ctx.fillRect(299, 197, 10, 5); }
+    // Neighbors; one waits near the house for lunch.
+    drawPerson(573, 374, '#bd5f4e', '#633f3e', 'down', 0);
+    townspeople.forEach(person => drawPerson(person.x, person.y, person.shirt, person.hair, person.dir, person.phase));
+    if (errands[1].done) { ctx.fillStyle = '#fcf2c5'; ctx.fillRect(767, 431, 16, 10); ctx.fillStyle = '#df8b73'; ctx.fillRect(770, 427, 7, 5); }
+    if (errands[2].done) drawPerson(283, 426, '#7a695b', '#ddd3ae', 'down', 0);
+    if (soupCollected && !errands[2].done) { ctx.fillStyle = '#9a6745'; ctx.fillRect(292, 195, 16, 12); ctx.fillStyle = '#dfb760'; ctx.fillRect(295, 192, 10, 4); }
+    // Flowers in a basket on the porch after pickup.
+    if (errands[2].done) { ctx.fillStyle = '#9a6745'; ctx.fillRect(333, 428, 18, 12); ctx.fillStyle = '#db9461'; ctx.fillRect(337, 421, 10, 9); ctx.fillStyle = '#f4d16e'; ctx.fillRect(338, 417, 3, 4); ctx.fillStyle = '#ee9683'; ctx.fillRect(344, 415, 4, 4); }
+    // Selected companion and player.
+    drawCompanion();
+    drawPlayer(player, { shirt: '#e96d56', pants: '#375c4a', hair: '#543e39', badge: '#f5cd64' });
+    drawPlayer(player2, { shirt: '#528fc1', pants: '#354b5e', hair: '#453b50', badge: '#f5cd64', cap: '#e3b557' });
+    ctx.restore();
+  }
+
+  function drawPerson(x, y, shirt, hair, dir, phase) {
+    ctx.fillStyle = '#668455'; ctx.fillRect(x - 8, y + 14, 18, 4);
+    ctx.fillStyle = '#515047'; ctx.fillRect(x - 6, y + 9, 5, 7); ctx.fillRect(x + 2, y + 9, 5, 7);
+    ctx.fillStyle = shirt; ctx.fillRect(x - 8, y - 3, 18, 14);
+    ctx.fillStyle = '#e9bd8d'; ctx.fillRect(x - 6, y - 14, 14, 13);
+    ctx.fillStyle = hair; ctx.fillRect(x - 8, y - 17, 17, 6); ctx.fillRect(x - 8, y - 12, 4, 6);
+    if (dir !== 'up') { ctx.fillStyle = '#3e4239'; const eye = dir === 'left' ? -5 : dir === 'right' ? 4 : -3; ctx.fillRect(x + eye, y - 8, 2, 2); if (dir === 'down') ctx.fillRect(x + 3, y - 8, 2, 2); }
+    if (phase) { ctx.fillStyle = '#f4d477'; ctx.fillRect(x + 7, y - 11, 3, 3); }
+  }
+
+  function drawPlayer(actor, colors) {
+    const x = actor.x, y = actor.y + (actor.moving ? Math.sin(playerAnimation * .023) * 1.5 : 0);
+    ctx.fillStyle = '#557348'; ctx.fillRect(x - 9, y + 15, 20, 5);
+    ctx.fillStyle = colors.pants; const stride = actor.moving ? Math.sin(playerAnimation * .023) * 2 : 0;
+    ctx.fillRect(x - 6, y + 8, 5, 8 + stride); ctx.fillRect(x + 2, y + 8, 5, 8 - stride);
+    ctx.fillStyle = colors.shirt; ctx.fillRect(x - 9, y - 5, 20, 15);
+    ctx.fillStyle = '#f2c28b'; ctx.fillRect(x - 7, y - 16, 16, 14);
+    ctx.fillStyle = colors.hair; ctx.fillRect(x - 9, y - 20, 19, 7); ctx.fillRect(x - 9, y - 16, 4, 5);
+    if (colors.cap) { ctx.fillStyle = colors.cap; ctx.fillRect(x - 10, y - 20, 21, 4); ctx.fillRect(x - 6, y - 23, 14, 4); }
+    if (actor.dir !== 'up') { ctx.fillStyle = '#304037'; const ex = actor.dir === 'left' ? -5 : actor.dir === 'right' ? 4 : -4; ctx.fillRect(x + ex, y - 10, 2, 2); if (actor.dir === 'down') ctx.fillRect(x + 4, y - 10, 2, 2); }
+    ctx.fillStyle = colors.badge; ctx.fillRect(x + 6, y - 2, 4, 4);
+  }
+
+  function drawCompanion() {
+    const c = companions[activeCompanion];
+    const x = player.x - 18, y = player.y + 8 + Math.sin(playerAnimation * .014) * 1.1;
+    ctx.fillStyle = '#57744c'; ctx.fillRect(x - 7, y + 6, 15, 4);
+    ctx.fillStyle = c.color; ctx.fillRect(x - 7, y - 4, 15, 10);
+    ctx.fillStyle = '#f3c891'; ctx.fillRect(x - 5, y - 9, 11, 8);
+    ctx.fillStyle = c.color; ctx.fillRect(x - 7, y - 13, 14, 6);
+    ctx.fillStyle = '#304039'; ctx.fillRect(x + 2, y - 6, 2, 2);
+    if (c.id === 'bolt') { ctx.fillStyle = '#e5cb78'; ctx.fillRect(x - 9, y - 11, 4, 4); ctx.fillRect(x + 5, y - 11, 4, 4); }
+    if (c.id === 'pip') { ctx.fillStyle = '#f5d571'; ctx.fillRect(x - 9, y - 13, 3, 3); ctx.fillRect(x + 7, y - 13, 3, 3); }
+    if (c.id === 'zip') { ctx.fillStyle = '#df8f5e'; ctx.fillRect(x - 7, y - 16, 4, 5); ctx.fillRect(x + 2, y - 17, 4, 6); }
+    ctx.fillStyle = '#fff4c7'; ctx.font = 'bold 7px monospace'; ctx.textAlign = 'center'; ctx.fillText(c.name, x, y - 16);
+  }
+
+  function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+  function getTarget() {
+    const unfinished = errands.filter(e => !e.done);
+    let selected = unfinished.find(e => e.id === 'soup' && e.phase === 1);
+    if (selected) return { ...selected, x: 573, y: 374, object: 'Mrs. Maple', detail: 'Mrs. Maple is waiting for her lunch.' };
+    selected = unfinished.find(e => e.id === 'soup' && e.phase === 0);
+    if (selected) return selected;
+    return unfinished[0] || null;
+  }
+  function getNearby() {
+    const targets = [
+      ...errands.filter(e => !e.done).map(e => e.id === 'soup' && e.phase === 1 ? { ...e, x: 573, y: 374, object: 'Mrs. Maple', detail: 'Mrs. Maple is waiting for her lunch.' } : e),
+      { x: 299, y: 206, object: 'Lunch basket', detail: 'A packed lunch for Mrs. Maple.' },
+      ...townspeople.map(person => ({ x: person.x, y: person.y, object: person.name, detail: person.detail }))
+    ];
+    const close = targets.map(t => {
+      const playerDistance = distance(player, t), player2Distance = distance(player2, t);
+      return { ...t, d: Math.min(playerDistance, player2Distance), actor: playerDistance <= player2Distance ? player : player2 };
+    }).filter(t => t.d < 38).sort((a, b) => a.d - b.d);
+    return close[0] || null;
+  }
+  function collide(x, y) {
+    const box = { x: x - 6, y: y - 12, w: 12, h: 24 };
+    return solids.some(b => box.x < b.x + b.w && box.x + box.w > b.x && box.y < b.y + b.h && box.y + box.h > b.y);
+  }
+  function showToast(text) {
+    const el = document.getElementById('toast');
+    el.textContent = text; el.classList.add('show');
+    clearTimeout(toastTimeout); toastTimeout = setTimeout(() => el.classList.remove('show'), 2100);
+  }
+  function renderUI() {
+    document.getElementById('missionCounter').textContent = `${errands.filter(e => e.done).length} / ${errands.length}`;
+    document.getElementById('missionList').innerHTML = errands.map(e => `<div class="mission ${e.done ? 'done' : ''}"><div class="mission-check">${e.done ? '&#10003;' : ''}</div><div><div class="mission-name">${e.name}</div><div class="mission-hint">${e.done ? 'All taken care of!' : e.id === 'soup' && e.phase === 1 ? 'Maple House &middot; Zip' : e.hint}</div></div></div>`).join('');
+    document.getElementById('companionList').innerHTML = companions.map((c, i) => `<button class="companion ${i === activeCompanion ? 'active' : ''}" data-companion="${i}" aria-pressed="${i === activeCompanion}"><span class="companion-icon" style="color:${c.color}">${c.icon}</span><span><span class="companion-name">${c.name}</span><div class="companion-ability">${c.ability}</div></span><span class="companion-key">${i + 1}</span></button>`).join('');
+    document.querySelectorAll('[data-companion]').forEach(btn => btn.addEventListener('click', () => selectCompanion(Number(btn.dataset.companion))));
+    document.getElementById('companionTip').textContent = companions[activeCompanion].line;
+    if (complete) document.getElementById('townStatus').textContent = 'Every errand done. What a good neighbor!';
+    else document.getElementById('townStatus').textContent = errands.filter(e => e.done).length ? 'The neighborhood is looking brighter.' : 'A lovely day to help out.';
+  }
+  function selectCompanion(index) {
+    activeCompanion = (index + companions.length) % companions.length;
+    renderUI();
+    showToast(`${companions[activeCompanion].name}: ${companions[activeCompanion].ability.toLowerCase()}!`);
+  }
+  function interact() {
+    nearby = getNearby();
+    if (!nearby) { showToast('Nothing close by. Have a little wander!'); return; }
+    if (nearby.id === 'soup' && nearby.phase === 1) {
+      nearby.done = true; complete = errands.every(e => e.done); renderUI(); showToast('Lunch delivered! Mrs. Maple says thank you!'); return;
+    }
+    if (nearby.id === 'soup' && nearby.phase === 0 && !soupCollected) {
+      soupCollected = true; nearby.phase = 1; renderUI(); showToast('Lunch picked up! Mrs. Maple is by Maple House.'); return;
+    }
+    if (nearby.id && nearby.id !== 'soup' && !nearby.done) {
+      const helper = companions.find(c => c.id === nearby.companion);
+      showToast(`${nearby.detail} Ask ${helper.name} to help!`); return;
+    }
+    showToast(nearby.detail || 'Hello there, neighbor!');
+  }
+  function useAbility() {
+    nearby = getNearby();
+    if (activeCompanion === 2) {
+      if (nearby && nearby.id === 'soup' && nearby.phase === 0) {
+        showToast('Zip is ready to race! Press SPACE to pick up the lunch.'); return;
+      }
+      const target = errands.find(e => e.id === 'soup' && e.phase === 1 && !e.done);
+      if (target && distance(activePlayer, { x: 573, y: 374 }) < 48) {
+        showToast('Zip zipped the lunch to Mrs. Maple!'); target.done = true; complete = errands.every(e => e.done); renderUI(); return;
+      }
+      activePlayer.x = Math.max(22, Math.min(world.width - 22, activePlayer.x + (activePlayer.dir === 'left' ? -45 : activePlayer.dir === 'right' ? 45 : 0)));
+      activePlayer.y = Math.max(24, Math.min(world.height - 22, activePlayer.y + (activePlayer.dir === 'up' ? -45 : activePlayer.dir === 'down' ? 45 : 0)));
+      showToast('Zip! A quick little dash!'); return;
+    }
+    if (!nearby || !nearby.id || nearby.id === 'soup' || nearby.done) {
+      showToast(activeCompanion === 0 ? 'Bolt needs something broken to fix.' : 'Pip is sniffing... no clues right here!'); return;
+    }
+    if (nearby.companion !== companions[activeCompanion].id) {
+      const rightBuddy = companions.find(c => c.id === nearby.companion);
+      showToast(`${nearby.object} needs ${rightBuddy.name}'s special skill.`); return;
+    }
+    nearby.done = true; complete = errands.every(e => e.done); renderUI();
+    const finishMessages = { fountain: 'Bolt fixed the fountain! Splish splash!', flowers: 'Pip found the missing daisies! Lovely!' };
+    showToast(finishMessages[nearby.id] || 'Errand complete!');
+  }
+  function resetGame() {
+    errands.forEach(e => { e.done = false; if (e.id === 'soup') e.phase = 0; });
+    player.x = 480; player.y = 348; player.dir = 'down'; player2.x = 510; player2.y = 348; player2.dir = 'down'; activePlayer = player; soupCollected = false; complete = false; selectCompanion(0); renderUI(); showToast('A fresh new day of errands!');
+  }
+  function updateTownspeople(dt) {
+    townspeople.forEach(person => {
+      const [targetX, targetY] = person.route[person.waypoint];
+      const dx = targetX - person.x, dy = targetY - person.y;
+      const distanceToTarget = Math.hypot(dx, dy);
+      const step = person.speed * dt / 1000;
+      if (distanceToTarget <= step) {
+        person.x = targetX; person.y = targetY;
+        person.waypoint = (person.waypoint + 1) % person.route.length;
+      } else if (distanceToTarget > 0) {
+        person.x += dx / distanceToTarget * step;
+        person.y += dy / distanceToTarget * step;
+      }
+      if (Math.abs(dx) > Math.abs(dy)) person.dir = dx >= 0 ? 'right' : 'left';
+      else if (dy) person.dir = dy >= 0 ? 'down' : 'up';
+    });
+  }
+  function update(dt) {
+    updateTownspeople(dt);
+    playerAnimation += dt;
+    movePlayer(player, 'a', 'd', 'w', 's', dt);
+    movePlayer(player2, 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', dt);
+    const zone = player.x < 330 ? 'CORNER CAFE' : player.x > 690 ? 'DAISY PARK' : player.y < 180 ? 'MAPLE SQUARE' : player.y > 400 ? 'MAPLE STREET' : 'TOWN CROSSROADS';
+    document.getElementById('zoneLabel').textContent = zone;
+    nearby = getNearby();
+    const prompt = document.getElementById('interaction');
+    if (nearby) { prompt.textContent = `SPACE  ${nearby.id === 'soup' && nearby.phase === 1 ? 'DELIVER LUNCH' : nearby.id === 'soup' ? 'PICK UP LUNCH' : nearby.id ? 'ASK FOR HELP' : 'SAY HELLO'}`; prompt.classList.add('show'); }
+    else prompt.classList.remove('show');
+  }
+  function movePlayer(actor, left, right, up, down, dt) {
+    let dx = Number(keys.has(right)) - Number(keys.has(left));
+    let dy = Number(keys.has(down)) - Number(keys.has(up));
+    if (dx && dy) { dx *= .7071; dy *= .7071; }
+    actor.moving = Boolean(dx || dy);
+    if (!actor.moving) return;
+    activePlayer = actor;
+    actor.step += dt;
+    if (Math.abs(dx) > Math.abs(dy)) actor.dir = dx > 0 ? 'right' : 'left';
+    else actor.dir = dy > 0 ? 'down' : 'up';
+    const speed = 105 * dt / 1000;
+    const nx = Math.max(18, Math.min(world.width - 18, actor.x + dx * speed));
+    const ny = Math.max(21, Math.min(world.height - 16, actor.y + dy * speed));
+    if (!collide(nx, actor.y)) actor.x = nx;
+    if (!collide(actor.x, ny)) actor.y = ny;
+  }
+  function frame(time) {
+    const dt = Math.min(40, time - (lastTime || time)); lastTime = time;
+    update(dt); drawWorld(); requestAnimationFrame(frame);
+  }
+  window.addEventListener('keydown', e => {
+    const key = e.key.toLowerCase();
+    if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', ' '].includes(key)) e.preventDefault();
+    if ([' ', 'e', 'q', '1', '2', '3'].includes(key) && e.repeat) return;
+    if (['a', 'd', 'w', 's'].includes(key)) activePlayer = player;
+    if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) activePlayer = player2;
+    keys.add(key);
+    if (key === ' ') interact();
+    if (key === 'e') useAbility();
+    if (key === 'q') selectCompanion(activeCompanion + 1);
+    if (key === '1' || key === '2' || key === '3') selectCompanion(Number(key) - 1);
+  });
+  window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+  window.addEventListener('blur', () => keys.clear());
+  document.getElementById('resetButton').addEventListener('click', resetGame);
+  document.querySelectorAll('[data-move]').forEach(btn => {
+    const keyByMove = { up: 'arrowup', down: 'arrowdown', left: 'arrowleft', right: 'arrowright' };
+    const down = e => { e.preventDefault(); keys.add(keyByMove[btn.dataset.move]); };
+    const up = e => { e.preventDefault(); keys.delete(keyByMove[btn.dataset.move]); };
+    btn.addEventListener('pointerdown', down); btn.addEventListener('pointerup', up); btn.addEventListener('pointerleave', up); btn.addEventListener('pointercancel', up);
+  });
+  document.querySelector('[data-action="interact"]').addEventListener('click', interact);
+  document.querySelector('[data-action="ability"]').addEventListener('click', useAbility);
+  document.querySelector('[data-action="cycle"]').addEventListener('click', () => selectCompanion(activeCompanion + 1));
+  renderUI();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
